@@ -1,8 +1,8 @@
-## Interface: 40000
-## Title: |cff777777al|rTooltip
-## Author: Allez
-## Notes: Tooltip styling
-## Version: 40000.1
-## OptionalDeps: alInterface
+## Interface: 90002
+## Title: alTooltip
+## Author: Allez, updated by RMLR
+## Notes: Tooltip styling. Original by Allez. Forked via MonoUI.
+## Version: 90001.1
+
 
 alTooltip.lua

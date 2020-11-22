@@ -1,43 +1,31 @@
+-- Original author/forked download location: https://github.com/Allez/alTooltip
+-- Original sourcecode: MonoUI bundled version downloaded from https://www.wowinterface.com/downloads/info18071-MonoUI.html
+-- This sourcecode is modified to make it compatible/errorfree with the 9.0 version of World of Warcraft.
+ 
 
--- Config start
-local anchor = "BOTTOMRIGHT"
-local x, y = -12, 180
+local gcol = {.35, 1, .6}										-- Guild Color
+local pgcol = {.7, 0.5, .8} 									-- Player's Guild Color
+local position = { "BOTTOMRIGHT", UIParent, "RIGHT", -100, -275 }	-- Static Tooltip position
+local scale = 1													-- Tooltip scale
 local anchorcursor = false
--- Config end
 
-local config = {
-	["Anchor cursor"] = anchorcursor,
-}
-if UIConfig then
-	UIConfig["Tooltip"] = config
-end
 
-local anchorframe = CreateFrame("Frame", "Tooltip anchor", UIParent)
-anchorframe:SetSize(150, 20)
-anchorframe:SetPoint(anchor, x, y)
-if UIMovableFrames then tinsert(UIMovableFrames, anchorframe) end
-
-local backdrop = {
-	bgFile = [=[Interface\ChatFrame\ChatFrameBackground]=],
-	edgeFile = [=[Interface\ChatFrame\ChatFrameBackground]=], edgeSize = 1,
-	insets = {top = 0, left = 0, bottom = 0, right = 0},
-}
 
 local tooltips = {
-	GameTooltip,
+	GameTooltip, 
 	ItemRefTooltip, 
 	ShoppingTooltip1, 
 	ShoppingTooltip2, 
 	ShoppingTooltip3, 
 	WorldMapTooltip, 
---	DropDownList1MenuBackdrop, 
---	DropDownList2MenuBackdrop, 
+	DropDownList1MenuBackdrop, 
+	DropDownList2MenuBackdrop, 
+	
+--[[ 	PetBattlePrimaryAbilityTooltip, 
+	PetBattlePrimaryUnitTooltip, 
+	FloatingBattlePetTooltip, 
+	BattlePetTooltip, ]]
 }
-
-if not IsAddOnLoaded("Aurora") then 
-	tinsert(tooltips, DropDownList1MenuBackdrop)
-	tinsert(tooltips, DropDownList2MenuBackdrop)
-end
 
 local types = {
 	rare = " R ",
@@ -46,40 +34,55 @@ local types = {
 	rareelite = " R+ ",
 }
 
-local CreateBG = CreateBG or function(parent)
-	local bg = CreateFrame("Frame", nil, parent)
-	bg:SetPoint("TOPLEFT", -1, 1)
-	bg:SetPoint("BOTTOMRIGHT", 1, -1)
-	bg:SetFrameLevel(parent:GetFrameLevel() - 1)
-	bg:SetBackdrop(backdrop)
-	bg:SetBackdropColor(0, 0, 0, 0.5)
-	bg:SetBackdropBorderColor(0, 0, 0, 1)
-	return bg
-end
-
 for _, v in pairs(tooltips) do
-	v:SetBackdrop(nil)
-	v.bg = CreateBG(v)
+--	v:DisableDrawLayer("BACKGROUND")
+	local bg = CreateFrame("Frame", nil, v)
+	bg:SetAllPoints(v)
+	bg:SetFrameLevel(0)
+	
+	v:SetScale(scale)
 	v:SetScript("OnShow", function(self)
-		self.bg:SetBackdropColor(0, 0, 0, 0.8)
+		self:SetBackdropColor(0, 0, 0, 0.6)
 		local item
 		if self.GetItem then
 			item = select(2, self:GetItem())
-		end
+		end		
 		if item then
 			local quality = select(3, GetItemInfo(item))
 			if quality and quality > 1 then
 				local r, g, b = GetItemQualityColor(quality)
-				self.bg:SetBackdropBorderColor(r, g, b)
+				self:SetBackdropBorderColor(r, g, b)
 			end
 		else
-			self.bg:SetBackdropBorderColor(0.4, 0.4, 0.4)
+--[[  		--if tostring(item):sub(1,10) == "battlepet:" then
+		if strmatch(link, "|Hbattlepet:") then
+			local _,species,_,quality = strsplit(":", link)
+			local itemName = C_PetJournal.GetPetInfoBySpeciesID(species)
+			if quality and quality > 1 then
+				local r, g, b = GetItemQualityColor(quality)
+				self:SetBackdropBorderColor(r, g, b)
+			end
+		end   ]]
+			self:SetBackdropBorderColor(0, 0, 0)
 		end
 	end)
 	v:HookScript("OnHide", function(self)
-		self.bg:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+		self:SetBackdropBorderColor(0, 0, 0, 1)
 	end)
 end
+
+--[[local pettooltips = {PetBattlePrimaryAbilityTooltip, PetBattlePrimaryUnitTooltip, FloatingBattlePetTooltip, BattlePetTooltip}
+for _, v in pairs(pettooltips) do
+	v:DisableDrawLayer("BACKGROUND")
+	local bg = CreateFrame("Frame", nil, v)
+	bg:SetAllPoints(v)
+	bg:SetFrameLevel(0)
+	
+	bg:SetBackdrop(backdrop)
+	bg:SetBackdropColor(0, 0, 0, 0.6)
+	bg:SetBackdropBorderColor(0, 0, 0, 1)
+
+end ]]
 
 local hex = function(r, g, b)
 	return ('|cff%02x%02x%02x'):format(r * 255, g * 255, b * 255)
@@ -145,8 +148,14 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(self)
 			local unitRace = UnitRace(unit)
 			local unitClass = UnitClass(unit)
 			local guild, rank = GetGuildInfo(unit)
+			local playerGuild = GetGuildInfo("player")
 			if guild then
-				GameTooltipTextLeft2:SetFormattedText(hex(0, 1, 1).."%s|r %s", guild, rank)
+				GameTooltipTextLeft2:SetFormattedText("%s"..hex(1, 1, 1).." (%s)|r", guild, rank)
+				if IsInGuild() and guild == playerGuild then
+					GameTooltipTextLeft2:SetTextColor(pgcol[1], pgcol[2], pgcol[3])
+				else
+					GameTooltipTextLeft2:SetTextColor(gcol[1], gcol[2], gcol[3])
+				end
 			end
 			for i=2, GameTooltip:NumLines() do
 				if _G["GameTooltipTextLeft" .. i]:GetText():find(PLAYER) then
@@ -182,12 +191,14 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(self)
 	end
 end)
 
-GameTooltipStatusBar.bg = CreateBG(GameTooltipStatusBar)
+GameTooltipStatusBar.bg = CreateFrame("Frame", nil, GameTooltipStatusBar)
+GameTooltipStatusBar.bg:SetPoint("TOPLEFT", GameTooltipStatusBar, "TOPLEFT", -1, 1)
+GameTooltipStatusBar.bg:SetPoint("BOTTOMRIGHT", GameTooltipStatusBar, "BOTTOMRIGHT", 1, -1)
+GameTooltipStatusBar.bg:SetFrameStrata("LOW")
 GameTooltipStatusBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 GameTooltipStatusBar:ClearAllPoints()
-GameTooltipStatusBar:SetPoint("TOPLEFT", GameTooltip, "BOTTOMLEFT", 0, -5)
-GameTooltipStatusBar:SetPoint("TOPRIGHT", GameTooltip, "BOTTOMRIGHT", 0, -5)
-GameTooltipStatusBar:SetHeight(7)
+GameTooltipStatusBar:SetPoint("TOPLEFT", GameTooltip, "BOTTOMLEFT", 1, 0)
+GameTooltipStatusBar:SetPoint("TOPRIGHT", GameTooltip, "BOTTOMRIGHT", -1, 0)
 GameTooltipStatusBar:HookScript("OnValueChanged", function(self, value)
 	if not value then
 		return
@@ -201,24 +212,30 @@ GameTooltipStatusBar:HookScript("OnValueChanged", function(self, value)
 		min, max = UnitHealth(unit), UnitHealthMax(unit)
 		if not self.text then
 			self.text = self:CreateFontString(nil, "OVERLAY")
-			self.text:SetPoint("CENTER", GameTooltipStatusBar, 0, 1)
-			self.text:SetFont('Fonts\\VisitorR.TTF', 10, "OUTLINEMONOCHROME")
+			self.text:SetPoint("CENTER", GameTooltipStatusBar)
+			self.text:SetFont(GameFontNormal:GetFont(), 11, "THINOUTLINE")
 		end
 		self.text:Show()
 		local hp = truncate(min).." / "..truncate(max)
 		self.text:SetText(hp)
 	else
-		self.text:Hide()
+		if self.text then
+			self.text:Hide()
+		end
 	end
 end)
 
 
 local iconFrame = CreateFrame("Frame", nil, ItemRefTooltip)
-iconFrame:SetSize(28, 28)
-iconFrame:SetPoint("TOPRIGHT", ItemRefTooltip, "TOPLEFT", -5, 0)
-iconFrame.bg = CreateBG(iconFrame)
-iconFrame.icon = iconFrame:CreateTexture(nil, "BACKGROUND")
-iconFrame.icon:SetAllPoints()
+iconFrame:SetWidth(30)
+iconFrame:SetHeight(30)
+iconFrame:SetPoint("TOPRIGHT", ItemRefTooltip, "TOPLEFT", -3, 0)
+iconFrame2 = CreateFrame("Frame", nil, iconFrame)
+iconFrame2:SetAllPoints(iconFrame)
+iconFrame2:SetFrameLevel(iconFrame:GetFrameLevel()+1)
+iconFrame.icon = iconFrame2:CreateTexture(nil, "BACKGROUND")
+iconFrame.icon:SetPoint("TOPLEFT", 1, -1)
+iconFrame.icon:SetPoint("BOTTOMRIGHT", -1, 1)
 iconFrame.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 
 hooksecurefunc("SetItemRef", function(link, text, button)
@@ -237,13 +254,39 @@ hooksecurefunc("SetItemRef", function(link, text, button)
 		iconFrame:Show()
 	end
 end)
+--[[
+hooksecurefunc("GameTooltip_SetDefaultAnchor", function(tooltip, parent)
+	tooltip:SetOwner(parent, "ANCHOR_NONE")
+	tooltip:SetPoint(unpack(position))
+	tooltip.default = 1
+	
+ 	tooltip:SetScript("OnUpdate", function(self, elapsed)
+		self.elapsed = (self.elapsed or 0) + elapsed
+		if self.elapsed >= 0.02 then
+			local x, y = GetCursorPosition()
+			tooltip:SetPoint("BOTTOMLEFT", x, y)
+			self.elapsed = 0
+		end
+	end) 
+end)]]
 
 hooksecurefunc("GameTooltip_SetDefaultAnchor", function(tooltip, parent)
-	if not config["Anchor cursor"] then
+	if not anchorcursor then
 		tooltip:SetOwner(parent, "ANCHOR_NONE")
-		tooltip:SetPoint("BOTTOMRIGHT", anchorframe, 0, 0)
+		tooltip:SetPoint(unpack(position))
 	else
 		tooltip:SetOwner(parent, "ANCHOR_CURSOR")
 	end
 	tooltip.default = 1
 end)
+
+
+
+--[[ PetBattlePrimaryUnitTooltip.Delimiter:SetTexture(0, 0, 0)
+PetBattlePrimaryUnitTooltip.Delimiter:SetHeight(1)
+PetBattlePrimaryAbilityTooltip.Delimiter1:SetHeight(1)
+PetBattlePrimaryAbilityTooltip.Delimiter1:SetTexture(0, 0, 0)
+PetBattlePrimaryAbilityTooltip.Delimiter2:SetHeight(1)
+PetBattlePrimaryAbilityTooltip.Delimiter2:SetTexture(0, 0, 0)
+FloatingBattlePetTooltip.Delimiter:SetTexture(0, 0, 0)
+FloatingBattlePetTooltip.Delimiter:SetHeight(1) ]]
