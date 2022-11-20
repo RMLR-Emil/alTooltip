@@ -1,8 +1,7 @@
-## Interface: 90002
+## Interface: 100002
 ## Title: alTooltip
-## Author: Allez, updated by RMLR
+## Author: Allez. Updated by RMLR (post 90001)
 ## Notes: Tooltip styling. Original by Allez. Forked via MonoUI.
-## Version: 90001.1
-
+## Version: 100002.1
 
 alTooltip.lua

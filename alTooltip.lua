@@ -1,7 +1,14 @@
--- Original author/forked download location: https://github.com/Allez/alTooltip
--- Original sourcecode: MonoUI bundled version downloaded from https://www.wowinterface.com/downloads/info18071-MonoUI.html
--- This sourcecode is modified to make it compatible/errorfree with the 9.0 version of World of Warcraft.
- 
+--[[
+Original author/forked download location: https://github.com/Allez/alTooltip
+Original sourcecode: MonoUI bundled version downloaded from https://www.wowinterface.com/downloads/info18071-MonoUI.html
+This sourcecode is modified to make it compatible/errorfree with the 9.0 version of World of Warcraft.
+
+100002 tooltip changes:
+https://us.forums.blizzard.com/en/wow/t/tooltip-addon-help/1404301/10
+https://wowpedia.fandom.com/wiki/Patch_10.0.2/API_changes
+
+]]
+
 
 local gcol = {.35, 1, .6}										-- Guild Color
 local pgcol = {.7, 0.5, .8} 									-- Player's Guild Color
@@ -36,13 +43,18 @@ local types = {
 
 for _, v in pairs(tooltips) do
 --	v:DisableDrawLayer("BACKGROUND")
-	local bg = CreateFrame("Frame", nil, v)
+	local bg = CreateFrame("Frame", nil, v, "BackdropTemplate")
+--	local bg = CreateFrame("Frame", nil, v, BackdropTemplateMixin and "BackdropTemplate")
+	if not bg.SetBackdrop then
+--		Mixin(bg, BackdropTemplateMixin)
+	end
+--	Mixin(bg, BackdropTemplateMixin)
 	bg:SetAllPoints(v)
 	bg:SetFrameLevel(0)
 	
 	v:SetScale(scale)
 	v:SetScript("OnShow", function(self)
-		self:SetBackdropColor(0, 0, 0, 0.6)
+--		self:SetBackdropColor(0, 0, 0, 0.6)
 		local item
 		if self.GetItem then
 			item = select(2, self:GetItem())
@@ -51,7 +63,7 @@ for _, v in pairs(tooltips) do
 			local quality = select(3, GetItemInfo(item))
 			if quality and quality > 1 then
 				local r, g, b = GetItemQualityColor(quality)
-				self:SetBackdropBorderColor(r, g, b)
+--				self:SetBackdropBorderColor(r, g, b)
 			end
 		else
 --[[  		--if tostring(item):sub(1,10) == "battlepet:" then
@@ -63,18 +75,18 @@ for _, v in pairs(tooltips) do
 				self:SetBackdropBorderColor(r, g, b)
 			end
 		end   ]]
-			self:SetBackdropBorderColor(0, 0, 0)
+--			self:SetBackdropBorderColor(0, 0, 0)
 		end
 	end)
 	v:HookScript("OnHide", function(self)
-		self:SetBackdropBorderColor(0, 0, 0, 1)
+--		self:SetBackdropBorderColor(0, 0, 0, 1)
 	end)
 end
 
 --[[local pettooltips = {PetBattlePrimaryAbilityTooltip, PetBattlePrimaryUnitTooltip, FloatingBattlePetTooltip, BattlePetTooltip}
 for _, v in pairs(pettooltips) do
 	v:DisableDrawLayer("BACKGROUND")
-	local bg = CreateFrame("Frame", nil, v)
+	local bg = CreateFrame("Frame", nil, v, "BackdropTemplate")
 	bg:SetAllPoints(v)
 	bg:SetFrameLevel(0)
 	
@@ -135,7 +147,7 @@ function GameTooltip_UnitColor(unit)
 	return r, g, b
 end
 
-GameTooltip:HookScript("OnTooltipSetUnit", function(self)
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit,function(self, data)
 	local unit = select(2, self:GetUnit())
 	if unit then
 		local unitClassification = types[UnitClassification(unit)] or " "
@@ -191,7 +203,8 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(self)
 	end
 end)
 
-GameTooltipStatusBar.bg = CreateFrame("Frame", nil, GameTooltipStatusBar)
+GameTooltipStatusBar.bg = CreateFrame("Frame", nil, GameTooltipStatusBar, "BackdropTemplate")
+--Mixin(GameTooltipStatusBar, BackdropTemplateMixin)
 GameTooltipStatusBar.bg:SetPoint("TOPLEFT", GameTooltipStatusBar, "TOPLEFT", -1, 1)
 GameTooltipStatusBar.bg:SetPoint("BOTTOMRIGHT", GameTooltipStatusBar, "BOTTOMRIGHT", 1, -1)
 GameTooltipStatusBar.bg:SetFrameStrata("LOW")
@@ -226,11 +239,11 @@ GameTooltipStatusBar:HookScript("OnValueChanged", function(self, value)
 end)
 
 
-local iconFrame = CreateFrame("Frame", nil, ItemRefTooltip)
+local iconFrame = CreateFrame("Frame", nil, ItemRefTooltip, "BackdropTemplate")
 iconFrame:SetWidth(30)
 iconFrame:SetHeight(30)
 iconFrame:SetPoint("TOPRIGHT", ItemRefTooltip, "TOPLEFT", -3, 0)
-iconFrame2 = CreateFrame("Frame", nil, iconFrame)
+iconFrame2 = CreateFrame("Frame", nil, iconFrame, "BackdropTemplate")
 iconFrame2:SetAllPoints(iconFrame)
 iconFrame2:SetFrameLevel(iconFrame:GetFrameLevel()+1)
 iconFrame.icon = iconFrame2:CreateTexture(nil, "BACKGROUND")
